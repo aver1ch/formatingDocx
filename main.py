@@ -8,77 +8,17 @@ import os
 import uuid
 import tempfile
 from urllib.parse import urlparse
+from doc_editor.editor import DocumentEditor
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-
-
-class DocumentEditor:
-    def __init__(self, doc_path, config):
-        self.doc = Document(doc_path)
-        self.config = config
-
-    def apply_margins(self):
-        margins = self.config['document']['general']['margins']
-        sections = self.doc.sections
-        for section in sections:
-            section.left_margin = Inches(float(margins['left'].replace('cm', '')) / 2.54)
-            section.right_margin = Inches(float(margins['right'].replace('cm', '')) / 2.54)
-            section.top_margin = Inches(float(margins['top'].replace('cm', '')) / 2.54)
-            section.bottom_margin = Inches(float(margins['bottom'].replace('cm', '')) / 2.54)
-
-    def apply_fonts(self):
-        fonts = self.config['document']['general']['fonts']
-        # Применяем основной шрифт ко всему документу
-        main_font = fonts['main']
-        for paragraph in self.doc.paragraphs:
-            for run in paragraph.runs:
-                run.font.name = main_font['family']
-                run.font.size = Pt(float(main_font['size']))
-
-    def apply_spacing(self):
-        spacing = self.config['document']['general']['spacing']
-        line_spacing = float(spacing['line'])
-        for paragraph in self.doc.paragraphs:
-            paragraph.paragraph_format.line_spacing = line_spacing
-
-    def process_title_page(self):
-        title_page = self.config['document']['structure']['title_page']
-        # Здесь должна быть логика обработки титульной страницы
-        # Например, добавление элементов из конфига
-        for element in title_page['elements']:
-            for key, value in element.items():
-                # Поиск и замена или добавление элементов
-                pass
-
-    def process_numbering(self):
-        numbering = self.config['document']['numbering']
-        # Обработка нумерации страниц
-        if 'pages' in numbering:
-            # Логика настройки нумерации страниц
-            pass
-
-        # Обработка колонтитулов
-        if 'headers' in numbering:
-            for section in self.doc.sections:
-                header = section.header
-                if numbering['headers']['left']:
-                    paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
-                    paragraph.text = numbering['headers']['left']
-                    paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-
-                if numbering['headers']['right']:
-                    paragraph = header.paragraphs[1] if len(header.paragraphs) > 1 else header.add_paragraph()
-                    paragraph.text = numbering['headers']['right']
-                    paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-
-    def apply_all_rules(self):
-        self.apply_margins()
-        self.apply_fonts()
-        self.apply_spacing()
-        self.process_title_page()
-        self.process_numbering()
-        # Здесь можно добавить обработку других разделов конфига
-
 
 def download_file(url, save_path):
     response = requests.get(url, stream=True)
@@ -141,6 +81,7 @@ def process_document():
             return jsonify({'error': f'Failed to download document: {str(e)}'}), 400
         except Exception as e:
             return jsonify({'error': f'Document processing failed: {str(e)}'}), 500
+    
 
 
 if __name__ == '__main__':

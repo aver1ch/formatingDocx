@@ -8,7 +8,7 @@ document:
     fonts:
       main:
         family: Times New Roman
-        size: 14pt
+        size: 12pt
       appendices:
         family: Times New Roman
         size: 12pt
@@ -22,6 +22,7 @@ document:
 
   structure:
     title_page:
+      template: "title_page_template"
       elements:
         - agency_name: Федеральное агентство по техническому регулированию и метрологии
         - logo_position: center
@@ -29,7 +30,7 @@ document:
         - designation: ГОСТ Р X.XXXX—XXXX
         - title: Название стандарта
         - status: Издание официальное / (проект)
-        - publisher_info: Москва, Стандартинформ, год
+        - publisher_info: Москва, Стандартинформ
       appendix: А
 
     preface:

@@ -1,6 +1,7 @@
-from doc_editor.editor import format_document
-format_document(
-    input_path="doc_editor/tests/test_data/Хуй.docx",
-    config_path="doc_editor/tests/test_data/formatConfig.yaml",
-    output_path="output.docx"
-)
+from doc_editor.editor import DocumentEditor
+
+
+editor = DocumentEditor("doc_editor/tests/test_data/test.docx")
+editor.load_config("doc_editor/tests/test_data/formatConfig.yaml")
+editor.apply_config()
+editor.save("output.docx")

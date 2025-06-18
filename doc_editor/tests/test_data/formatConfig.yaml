@@ -15,6 +15,16 @@ document:
       notes:
         family: Times New Roman
         size: 12pt
+      header1:
+        family: Times New Roman
+        size: 14pt
+        type: bold
+      header2:
+        family: Times New Roman
+        size: 12pt
+      header3:
+        family: Times New Roman
+        size: 10pt
     spacing:
       line: 1.5
       exceptions:
@@ -23,14 +33,18 @@ document:
   structure:
     title_page:
       template: "title_page_template"
+      template_path: "doc_editor/templates/title_page_template.docx"
+      image_path: "doc_editor/templates/logo.png"
+      enabled: true
       elements:
-        - agency_name: Федеральное агентство по техническому регулированию и метрологии
-        - logo_position: center
+        - agency_name: "Федеральное агентство\n по техническому регулированию и метрологии"
         - standard_type: ГОСТ Р / ПНСТ
         - designation: ГОСТ Р X.XXXX—XXXX
         - title: Название стандарта
         - status: Издание официальное / (проект)
         - publisher_info: Москва, Стандартинформ
+        - city: Москва
+        - current_year: 2025
       appendix: А
 
     preface:

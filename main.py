@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from doc_editor.editor import DocumentEditor
 
 import logging
-
+# pipreqs . --force
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -62,13 +62,16 @@ def process_document():
         try:
             # Скачиваем документ
             input_path = os.path.join(temp_dir, 'input.docx')
+            config_path = os.path.join(temp_dir, 'config.yaml')
             download_file(document_url, input_path)
+            download_file(config_data, config_path)
 
             # Обрабатываем документ
             output_path = os.path.join(temp_dir, 'output.docx')
-            editor = DocumentEditor(input_path, config)
-            editor.apply_all_rules()
-            editor.doc.save(output_path)
+            editor = DocumentEditor(input_path)
+            editor.load_config(config_path)
+            editor.apply_config()
+            editor.save(output_path)
 
             # Отправляем результат
             return send_file(

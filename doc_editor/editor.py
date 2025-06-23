@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional
 try:
     from doc_editor.style_manager.style import StyleManager
     from doc_editor.doc_builder.title import TitlePageManager
+    from doc_editor.colontitul.colontitul import HeaderFooterManager
 except ImportError as e:
     logging.error(f"Ошибка импорта модулей: {e}")
     raise
@@ -40,6 +41,7 @@ class DocumentEditor:
             self.config = None
             self.style_manager = None
             self.structure_builder = None
+            self.header_footer_manager = None
             self.logger = logger
             self.logger.info(f"Документ загружен: {doc_path}")
         except Exception as e:
@@ -65,6 +67,7 @@ class DocumentEditor:
             self._validate_config()
             self.style_manager = StyleManager(self.doc, self.config)
             self.structure_builder = TitlePageManager(self.config)
+            self.header_footer_manager = HeaderFooterManager(self.doc, self.config)
             self.logger.info(f"Конфигурация загружена: {config_path}")
         except FileNotFoundError:
             self.logger.error(f"Файл конфигурации не найден: {config_path}")
@@ -171,7 +174,7 @@ class DocumentEditor:
             self.logger.error(f"Ошибка построения структуры документа: {e}")
             raise DocumentFormattingError(f"Ошибка построения структуры: {e}")
 
-    def apply_config(self) -> None:
+    '''def apply_config(self) -> None:
         """
         Применение всей конфигурации к документу.
         
@@ -184,10 +187,43 @@ class DocumentEditor:
             raise ValueError("Конфигурация не загружена")
         try:
             self.logger.info("Начало применения конфигурации к документу")
-
+            self.header_footer_manager.apply_headers_footers()
+            self.style_manager.apply_all_styles()
+            self.style_manager.apply_to_existing_document()
             self.apply_margins()
             self.build_document_structure()
             self.apply_margins()
+            self.header_footer_manager.apply_headers_footers()
+            self.logger.info("Конфигурация успешно применена к документу")
+        except Exception as e:
+            self.logger.error(f"Ошибка применения конфигурации: {e}")
+            raise DocumentFormattingError(f"Ошибка применения конфигурации: {e}")
+'''
+    def apply_config(self) -> None:
+        if not self.config:
+            self.logger.error("Конфигурация не загружена")
+            raise ValueError("Конфигурация не загружена")
+        try:
+            self.logger.info("Начало применения конфигурации к документу")
+            
+            # Сначала стили и поля
+            self.style_manager.apply_all_styles()
+            self.style_manager.apply_to_existing_document()
+            self.apply_margins()
+            
+            # Затем структура документа (пересоздание)
+            self.build_document_structure()
+            
+            # ВАЖНО: Пересоздаем менеджеры после изменения документа
+            self.style_manager = StyleManager(self.doc, self.config)
+            self.header_footer_manager = HeaderFooterManager(self.doc, self.config)
+            
+            # Применяем все заново к новому документу
+            self.apply_margins()
+            self.style_manager.apply_all_styles()
+            self.style_manager.apply_to_existing_document()
+            self.header_footer_manager.apply_headers_footers()  # Теперь это сработает!
+            
             self.logger.info("Конфигурация успешно применена к документу")
         except Exception as e:
             self.logger.error(f"Ошибка применения конфигурации: {e}")

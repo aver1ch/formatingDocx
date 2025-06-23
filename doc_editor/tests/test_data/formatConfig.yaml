@@ -7,24 +7,27 @@ document:
       bottom: 20mm
     fonts:
       main:
-        family: Times New Roman
+        family: Arial
         size: 12pt
       appendices:
-        family: Times New Roman
+        family: Arial
         size: 12pt
       notes:
-        family: Times New Roman
+        family: Arial
         size: 12pt
+      headerNum: 3
       header1:
-        family: Times New Roman
+        family: Arial
         size: 14pt
-        type: bold
+        bold: True
       header2:
-        family: Times New Roman
+        family: Arial
         size: 12pt
+        bold: True
       header3:
-        family: Times New Roman
+        family: Arial
         size: 10pt
+        bold: True
     spacing:
       line: 1.5
       exceptions:
@@ -91,8 +94,10 @@ document:
         - introduction: roman
       start_from: II (for special pages)
     headers:
-      left: Национальный стандарт РФ
-      right: Обозначение стандарта (без международных кодов)
+      right: Национальный стандарт РФ
+      left: Обозначение стандарта (без международных кодов)
+      page_numbers: true
+      enabled: true
 
   special_cases:
     draft:

@@ -40,14 +40,14 @@ document:
       image_path: "doc_editor/templates/logo.png"
       enabled: true
       elements:
-        - agency_name: "Федеральное агентство\n по техническому регулированию и метрологии"
-        - standard_type: ГОСТ Р / ПНСТ
-        - designation: ГОСТ Р X.XXXX—XXXX
+        - agency_name: "ФЕДЕРАЛЬНОЕ АГЕНСТВО\nПО ТЕХНИЧЕСКОМУ РЕГУЛИРОВАНИЮ И МЕТРОЛОГИИ"
+        - standart_type: "ГОСТ Р"
+        - designation: "(проект, первая редакция)"
         - title: Название стандарта
-        - status: Издание официальное / (проект)
-        - publisher_info: Москва, Стандартинформ
+        - status: "Настоящий проект стандарта не подлежит применению до его утверждения"
+        - publisher_info: Стандартинформ
         - city: Москва
-        - current_year: 2025
+        - current_year: "202_"
       appendix: А
 
     preface:
@@ -94,7 +94,7 @@ document:
         - introduction: roman
       start_from: II (for special pages)
     headers:
-      right: Национальный стандарт РФ
+      right: "ГОСТ Р\n(проект, первая редакция)"
       left: Обозначение стандарта (без международных кодов)
       page_numbers: true
       enabled: true

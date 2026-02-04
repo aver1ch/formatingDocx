@@ -45,7 +45,7 @@ class TitlePageManager:
             title_doc = DocxTemplate(title_config['template_path'])
             context = {
                 'agency_name': elements.get('agency_name', ''),
-                'standart_type': elements.get('standart_type', ''),
+                'st_type': elements.get('standart_type', ''),
                 'image': InlineImage(title_doc, title_config['image_path'], 
                                    width=Mm(42)),
                 'designation': elements.get('designation', ''),

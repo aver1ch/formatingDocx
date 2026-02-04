@@ -1,183 +1,76 @@
 from docx import Document
-from docx.shared import Pt, Inches, Mm, Cm
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-# from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.enum.section import WD_SECTION_START 
-import yaml
 import logging
-from typing import Dict, Any, Optional
+from typing import Optional
 
-# Предполагается, что эти модули существуют
-try:
-    from doc_editor.style_manager.style import StyleManager
-    from doc_editor.doc_builder.title import TitlePageManager
-    from doc_editor.colontitul.colontitul import HeaderFooterManager
-except ImportError as e:
-    logging.error(f"Ошибка импорта модулей: {e}")
-    raise
+from .parsers import ConfigParser
+from .models import DocumentConfig, DocumentFormattingError
+from .pipeline import DocumentProcessingPipeline
 
 # Настройка локального логгера
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
-
-
-class DocumentFormattingError(Exception):
-    """Базовое исключение для ошибок форматирования документа."""
-    pass
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
 
 
 class DocumentEditor:
+    """Главный интерфейс для редактирования документов."""
+
     def __init__(self, doc_path: str):
+        """
+        Инициализация редактора документа.
+
+        Args:
+            doc_path: Путь к файлу документа.
+
+        Raises:
+            DocumentFormattingError: Если документ не удалось загрузить.
+            TypeError: Если doc_path не строка.
+        """
+        self.logger = logger
+        
         if not isinstance(doc_path, str):
-            logger.error(f"doc_path must be a string, got {type(doc_path)}")
+            self.logger.error(f"doc_path must be a string, got {type(doc_path)}")
             raise TypeError("doc_path must be a string")
+
         try:
             self.doc = Document(doc_path)
             self.doc_path = doc_path
-            self.output_path = None
-            self.config = None
-            self.style_manager = None
-            self.structure_builder = None
-            self.header_footer_manager = None
-            self.logger = logger
+            self.config: Optional[DocumentConfig] = None
+            self.pipeline: Optional[DocumentProcessingPipeline] = None
             self.logger.info(f"Документ загружен: {doc_path}")
         except Exception as e:
             self.logger.error(f"Ошибка загрузки документа {doc_path}: {e}")
-            raise DocumentFormattingError(f"Не удалось загрузать документ: {e}")
+            raise DocumentFormattingError(f"Не удалось загрузить документ: {e}")
 
     def load_config(self, config_path: str) -> None:
         """
         Загрузка конфигурации из YAML файла.
-        
+
         Args:
             config_path: Путь к файлу конфигурации.
-            
+
         Raises:
-            DocumentFormattingError: Если файл не найден или некорректен.
+            DocumentFormattingError: Если конфигурация не загружена корректно.
+            TypeError: Если config_path не строка.
         """
         if not isinstance(config_path, str):
             self.logger.error(f"config_path must be a string, got {type(config_path)}")
             raise TypeError("config_path must be a string")
+
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                self.config = yaml.safe_load(f)
-            self._validate_config()
-            self.style_manager = StyleManager(self.doc, self.config)
-            self.structure_builder = TitlePageManager(self.config)
-            self.header_footer_manager = HeaderFooterManager(self.doc, self.config)
+            self.config = ConfigParser.from_file(config_path)
             self.logger.info(f"Конфигурация загружена: {config_path}")
-        except FileNotFoundError:
-            self.logger.error(f"Файл конфигурации не найден: {config_path}")
-            raise DocumentFormattingError(f"Файл конфигурации не найден: {config_path}")
-        except yaml.YAMLError as e:
-            self.logger.error(f"Ошибка парсинга YAML: {e}")
-            raise DocumentFormattingError(f"Некорректный формат YAML: {e}")
         except Exception as e:
             self.logger.error(f"Ошибка загрузки конфигурации: {e}")
             raise DocumentFormattingError(f"Ошибка загрузки конфигурации: {e}")
 
-    def _validate_config(self) -> None:
+    def apply_config(self) -> None:
         """
-        Валидация обязательных полей конфигурации.
-        
-        Raises:
-            DocumentFormattingError: Если отсутствуют обязательные поля.
-        """
-        required_paths = [
-            ['document', 'general', 'margins'],
-            ['document', 'general', 'fonts'],
-            ['document', 'general', 'spacing'],
-            ['document', 'structure']
-        ]
-        for path in required_paths:
-            current = self.config
-            for key in path:
-                if not isinstance(current, dict) or key not in current:
-                    self.logger.error(f"Отсутствует обязательное поле: {'.'.join(path)}")
-                    raise DocumentFormattingError(f"Отсутствует обязательное поле: {'.'.join(path)}")
-                current = current[key]
+        Применение конфигурации к документу.
 
-    def apply_margins(self) -> None:
-        """
-        Применение настроек полей документа.
-        
-        Raises:
-            DocumentFormattingError: Если настройки некорректны.
-        """
-        try:
-            margins_config = self.config['document']['general']['margins']
-            self.logger.info("Применение настроек полей документа")
-            for i, section in enumerate(self.doc.sections):
-                section.left_margin = self._parse_measurement(margins_config['left'])
-                section.right_margin = self._parse_measurement(margins_config['right'])
-                section.top_margin = self._parse_measurement(margins_config['top'])
-                section.bottom_margin = self._parse_measurement(margins_config['bottom'])
-                self.logger.debug(f"Поля установлены для секции {i+1}: "
-                                f"левое={margins_config['left']}, правое={margins_config['right']}, "
-                                f"верхнее={margins_config['top']}, нижнее={margins_config['bottom']}")
-            self.logger.info(f"Поля успешно применены к {len(self.doc.sections)} секциям")
-        except KeyError as e:
-            self.logger.error(f"Отсутствует параметр полей: {e}")
-            raise DocumentFormattingError(f"Отсутствует параметр полей в конфигурации: {e}")
-        except Exception as e:
-            self.logger.error(f"Ошибка применения полей: {e}")
-            raise DocumentFormattingError(f"Ошибка применения полей: {e}")
-
-    def _parse_measurement(self, value: str) -> object:
-        """
-        Парсинг размеров из строки (поддерживает mm, cm, pt, in).
-        
-        Args:
-            value: Значение размера (строка или число).
-            
-        Returns:
-            Объект размера (Pt, Mm, Cm, Inches).
-            
-        Raises:
-            DocumentFormattingError: Если формат некорректен.
-        """
-        try:
-            if isinstance(value, (int, float)):
-                return Pt(float(value))
-            value = str(value).strip().lower()
-            if value.endswith('mm'):
-                return Mm(float(value[:-2]))
-            elif value.endswith('cm'):
-                return Cm(float(value[:-2]))
-            elif value.endswith('pt'):
-                return Pt(float(value[:-2]))
-            elif value.endswith('in') or value.endswith('"'):
-                return Inches(float(value[:-2] if value.endswith('in') else value[:-1]))
-            else:
-                return Pt(float(value))
-        except (ValueError, TypeError) as e:
-            self.logger.error(f"Ошибка парсинга размера '{value}': {e}")
-            raise DocumentFormattingError(f"Некорректный формат размера '{value}': {e}")
-
-    def build_document_structure(self) -> None:
-        """
-        Строит структуру документа.
-        
-        Raises:
-            DocumentFormattingError: Если структура не может быть построена.
-        """
-        try:
-            self.doc.save(self.doc_path)
-            self.structure_builder.add_title_page(self.doc_path, "doc_with_title.docx")
-            self.doc = Document("doc_with_title.docx")
-            self.doc_path = "doc_with_title.docx"
-            self.logger.info("Структура документа успешно построена")
-        except Exception as e:
-            self.logger.error(f"Ошибка построения структуры документа: {e}")
-            raise DocumentFormattingError(f"Ошибка построения структуры: {e}")
-
-    '''def apply_config(self) -> None:
-        """
-        Применение всей конфигурации к документу.
-        
         Raises:
             ValueError: Если конфигурация не загружена.
             DocumentFormattingError: Если применение конфигурации не удалось.
@@ -185,44 +78,16 @@ class DocumentEditor:
         if not self.config:
             self.logger.error("Конфигурация не загружена")
             raise ValueError("Конфигурация не загружена")
-        try:
-            self.logger.info("Начало применения конфигурации к документу")
-            self.header_footer_manager.apply_headers_footers()
-            self.style_manager.apply_all_styles()
-            self.style_manager.apply_to_existing_document()
-            self.apply_margins()
-            self.build_document_structure()
-            self.apply_margins()
-            self.header_footer_manager.apply_headers_footers()
-            self.logger.info("Конфигурация успешно применена к документу")
-        except Exception as e:
-            self.logger.error(f"Ошибка применения конфигурации: {e}")
-            raise DocumentFormattingError(f"Ошибка применения конфигурации: {e}")
-'''
-    def apply_config(self) -> None:
-        if not self.config:
-            self.logger.error("Конфигурация не загружена")
-            raise ValueError("Конфигурация не загружена")
+
         try:
             self.logger.info("Начало применения конфигурации к документу")
             
-            # Сначала стили и поля
-            self.style_manager.apply_all_styles()
-            self.style_manager.apply_to_existing_document()
-            self.apply_margins()
+            # Создаем и выполняем pipeline
+            self.pipeline = DocumentProcessingPipeline(self.doc, self.config)
+            self.pipeline.execute(add_title_page=True)
             
-            # Затем структура документа (пересоздание)
-            self.build_document_structure()
-            
-            # ВАЖНО: Пересоздаем менеджеры после изменения документа
-            self.style_manager = StyleManager(self.doc, self.config)
-            self.header_footer_manager = HeaderFooterManager(self.doc, self.config)
-            
-            # Применяем все заново к новому документу
-            self.apply_margins()
-            self.style_manager.apply_all_styles()
-            self.style_manager.apply_to_existing_document()
-            self.header_footer_manager.apply_headers_footers()  # Теперь это сработает!
+            # Получаем обработанный документ
+            self.doc = self.pipeline.get_document()
             
             self.logger.info("Конфигурация успешно применена к документу")
         except Exception as e:
@@ -232,16 +97,18 @@ class DocumentEditor:
     def save(self, output_path: str) -> None:
         """
         Сохранение документа.
-        
+
         Args:
             output_path: Путь для сохранения файла.
-            
+
         Raises:
             DocumentFormattingError: Если сохранение не удалось.
+            TypeError: Если output_path не строка.
         """
         if not isinstance(output_path, str):
             self.logger.error(f"output_path must be a string, got {type(output_path)}")
             raise TypeError("output_path must be a string")
+
         try:
             self.doc.save(output_path)
             self.logger.info(f"Документ сохранен: {output_path}")

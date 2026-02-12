@@ -115,3 +115,12 @@ class DocumentEditor:
         except Exception as e:
             self.logger.error(f"Ошибка сохранения документа {output_path}: {e}")
             raise DocumentFormattingError(f"Ошибка сохранения документа: {e}")
+
+    def get_document(self) -> Document:
+        """
+        Получение объекта обработанного документа.
+
+        Returns:
+            Document: Обработанный документ.
+        """
+        return self.doc

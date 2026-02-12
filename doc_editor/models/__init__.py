@@ -8,6 +8,7 @@ from .config import (
     NumberingConfig,
     StructureConfig,
     DocumentConfig,
+    HeaderTextPart,
 )
 from .exceptions import (
     DocumentFormattingError,
@@ -26,6 +27,7 @@ __all__ = [
     'NumberingConfig',
     'StructureConfig',
     'DocumentConfig',
+    'HeaderTextPart',
     'DocumentFormattingError',
     'ConfigValidationError',
     'ConfigParsingError',

@@ -7,6 +7,10 @@ from .processors import (
     HeaderFooterProcessor,
     TitleProcessor,
     MarginsProcessor,
+    SectionProcessor,
+    TOCProcessor,
+    PrefaceProcessor,
+    AppendixProcessor,
 )
 
 logger = logging.getLogger(__name__)
@@ -98,6 +102,26 @@ class DocumentProcessingPipeline:
 
         header_footer_processor = HeaderFooterProcessor(self.doc, self.config)
         header_footer_processor.apply()
+        
+        # Фаза 2: Многоуровневая нумерация разделов
+        self.logger.info("Этап 4: Применение многоуровневой нумерации разделов (Фаза 2)")
+        section_processor = SectionProcessor(self.config)
+        section_processor.apply_section_numbering(self.doc)
+        
+        # Фаза 2: Автоматическое построение оглавления
+        self.logger.info("Этап 5: Построение оглавления (Фаза 2)")
+        toc_processor = TOCProcessor(self.config)
+        toc_processor.create_toc(self.doc)
+        
+        # Фаза 2: Добавление предисловия
+        self.logger.info("Этап 6: Добавление предисловия (Фаза 2)")
+        preface_processor = PrefaceProcessor(self.config)
+        preface_processor.add_preface(self.doc)
+        
+        # Фаза 2: Обработка приложений
+        self.logger.info("Этап 7: Обработка приложений (Фаза 2)")
+        appendix_processor = AppendixProcessor(self.config)
+        appendix_processor.process_appendices(self.doc)
 
     def get_document(self) -> Document:
         """Возвращает обработанный документ."""
